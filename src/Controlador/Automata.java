@@ -24,14 +24,14 @@ public class Automata {
             estados.put(e, new Estado(e));
         }
     }
-    public void setInicial(Estado e) {
-        Estado xd = this.estados.get(e.getnombre()); //se busca si existe
-        if (xd == null) { //si no lo creamos y lo metemos
-            xd = new Estado(e.getnombre());
-            this.estados.put(e.getnombre(), e);
+    public void setInicial(String e) {
+        Estado xd = this.estados.get(e); //se busca si existe
+        if (xd == null) { //si no lo creamos y lo metemos donde estan todos
+            xd = new Estado(e);
+            this.estados.put(e, xd);
         }
         // y se hace inciial
-        this.estadoInicial = e;
+        this.estadoInicial = xd;
 
     }
     public void MarcarEstadoFinal(String xd) {
@@ -78,6 +78,92 @@ public class Automata {
         this.alfabeto.add(simbolo);
     }
 
+    public Set<Estado> clausuraLambda(Set<Estado> estados) {
+        Set<Estado> clausura = new HashSet<>(estados);
+        boolean cambios = true;
+        while (cambios) {
+            int tamanoInicial = clausura.size();
+            Set<Estado> nuevos = new HashSet<>();
+            for (Estado e : clausura) {
+                nuevos.addAll(e.getDestino("!"));
+                nuevos.addAll(e.getDestino("lambda"));
+            }
+            clausura.addAll(nuevos);
+            if (clausura.size() == tamanoInicial) cambios = false;
+        }
+        return clausura;
+    }
+
+    public boolean validarCadena(String cadena) {
+        if (this.estadoInicial == null) return false;
+
+        Set<Estado> estadosActuales = new HashSet<>();
+        estadosActuales.add(this.estadoInicial);
+        
+        // Aplicar clausura lambda inicial
+        estadosActuales = clausuraLambda(estadosActuales);
+
+        for (int i = 0; i < cadena.length(); i++) {
+            String simbolo = String.valueOf(cadena.charAt(i));
+            Set<Estado> proximosEstados = new HashSet<>();
+
+            for (Estado e : estadosActuales) {
+                proximosEstados.addAll(e.getDestino(simbolo));
+            }
+
+            if (proximosEstados.isEmpty()) return false;
+
+            // Después de cada símbolo, calculamos la clausura lambda
+            estadosActuales = clausuraLambda(proximosEstados);
+        }
+
+        for (Estado e : estadosActuales) {
+            if (e.isesFinal()) return true;
+        }
+
+        return false;
+    }
+
+    public String generarDOT() {
+        StringBuilder dot = new StringBuilder();
+        dot.append("digraph G {\n");
+        dot.append("    rankdir=LR;\n"); // Para que el dibujo sea de izquierda a derecha
+        dot.append("    node [shape = point]; start;\n"); // La flechita de inicio
+
+        // 1. Dibujar el estado inicial
+        if (estadoInicial != null) {
+            dot.append("    start -> ").append(estadoInicial.getnombre()).append(";\n");
+        }
+
+        // 2. Marcar los estados finales con doble círculo
+        dot.append("    node [shape = doublecircle];");
+        for (Estado f : estadosFinales.values()) {
+            dot.append(" ").append(f.getnombre());
+        }
+        dot.append(";\n");
+
+        // 3. Los demás estados son círculos normales
+        dot.append("    node [shape = circle];\n");
+
+        // 4. Recorrer todas las transiciones
+        for (Estado origen : estados.values()) {
+            // Obtenemos el mapa de transiciones del estado
+            for (String simbolo : origen.getDireccion().keySet()) {
+                for (Estado destino : origen.getDestino(simbolo)) {
+                    dot.append("    ")
+                            .append(origen.getnombre())
+                            .append(" -> ")
+                            .append(destino.getnombre())
+                            .append(" [label = \"")
+                            .append(simbolo)
+                            .append("\"];\n");
+                }
+            }
+        }
+
+        dot.append("}");
+        return dot.toString();
+    }
     // los metodo de Consulta
     public boolean isEsAFND() {
         return this.esAFND;
