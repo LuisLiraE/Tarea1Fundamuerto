@@ -30,7 +30,7 @@ public class LectorArchivo {
                     continue;
                 }
 
-                // Manejo de etiquetas k=, sigma=, s=, f=
+                // Aqui se manejo lo de k=, sigma=, s=, f=
                 if (linea.contains("=")) {
                     String[] partes = linea.split("=");
                     if (partes.length < 2) continue;
@@ -38,7 +38,7 @@ public class LectorArchivo {
                     String etiqueta = partes[0].trim().toLowerCase();
                     String valor = partes[1].trim();
 
-                    // Limpiar llaves { } si existen
+                    // Limpiar llaves { } si esque existen
                     if (valor.startsWith("{") && valor.endsWith("}")) {
                         valor = valor.substring(1, valor.length() - 1);
                     }

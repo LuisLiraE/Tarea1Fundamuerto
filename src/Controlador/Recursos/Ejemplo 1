@@ -1,0 +1,9 @@
+k={q0,q1}
+sigma={a,b}
+delta:
+(q0,a,q0)
+(q0,b,q1)
+(q1,a,q0)
+(q1,b,q1)
+s=q0
+f={q1}

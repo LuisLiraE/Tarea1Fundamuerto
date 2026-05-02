@@ -79,6 +79,7 @@ public class Automata {
     }
 
     public Set<Estado> clausuraLambda(Set<Estado> estados) {
+        // este metodo es para ver por donde se puede llegar a pasar desde cierto estado mediante los lambda
         Set<Estado> clausura = new HashSet<>(estados);
         boolean cambios = true;
         while (cambios) {
@@ -113,7 +114,7 @@ public class Automata {
 
             if (proximosEstados.isEmpty()) return false;
 
-            // Después de cada símbolo, calculamos la clausura lambda
+            // Después de cada símbolo calculamos la clausura lambda para ver lo estados alcanzables
             estadosActuales = clausuraLambda(proximosEstados);
         }
 

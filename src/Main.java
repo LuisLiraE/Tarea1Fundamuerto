@@ -13,16 +13,16 @@ public class Main {
         System.out.print("Ingrese la ruta del archivo del autómata (ej: automata.txt): ");
         String ruta = sc.nextLine();
 
-        // 1. Cargar el autómata
+        // Primero buscamos la ruta del txt
         lector.cargarAutomata(ruta, automata);
 
-        // 2. Información básica
+        // colocamos la informacion basica de este
         System.out.println("\nResumen del Autómata:");
         System.out.println("- Tipo: " + (automata.isEsAFND() ? "AFND" : "AFD"));
         System.out.println("- Alfabeto: " + automata.getAlfabeto());
         System.out.println("- Cantidad de estados: " + automata.getEstados().size());
 
-        // 3. Validar cadenas
+        // Aqui validamos la cadena
         System.out.println("\n--- PRUEBA DE CADENAS ---");
         System.out.println("Escriba cadenas para validar (o 'salir' para terminar):");
         while (true) {
@@ -34,17 +34,17 @@ public class Main {
             System.out.println("Resultado: " + (esValida ? "ACEPTADA" : "RECHAZADA"));
         }
 
-        // 4. Generar archivo para Graphviz
+        // aca hacemos el archivo para El gravitz
         System.out.println("\n--- EXPORTACIÓN GRAPHVIZ ---");
-        String dotSource = automata.generarDOT();
+        String xd = automata.generarDOT();
         try (PrintWriter out = new PrintWriter("automata.dot")) {
-            out.println(dotSource);
+            out.println(xd);
             System.out.println("Archivo 'automata.dot' generado con éxito.");
             System.out.println("Para generar la imagen usa: dot -Tpng automata.dot -o automata.png");
         } catch (Exception e) {
             System.err.println("Error al generar el archivo DOT: " + e.getMessage());
         }
 
-        System.out.println("\n¡Gracias por usar el Gestor de Autómatas!");
+        System.out.println("\nFin");
     }
 }
