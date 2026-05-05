@@ -1,50 +1,76 @@
 import Controlador.Automata;
 import java.util.Scanner;
-import java.io.PrintWriter;
-import java.io.File;
 
 public class Main {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         LectorArchivo lector = new LectorArchivo();
-        Automata automata = new Automata();
 
-        System.out.println("--- PROYECTO FUNDAMUERTOS: GESTOR DE AUTÓMATAS ---");
-        System.out.print("Ingrese la ruta del archivo del autómata (ej: automata.txt): ");
-        String ruta = sc.nextLine();
+        // pa cargar el archivo
+        System.out.println("=== MÓDULO DE PRUEBAS - PROYECTO FUNDAMUERTOS ===");
+        Automata auto1 = new Automata();
+        System.out.print("Ruta del Autómata 1: ");
+        lector.cargarAutomata(sc.nextLine(), auto1);
 
-        // Primero buscamos la ruta del txt
-        lector.cargarAutomata(ruta, automata);
+        // Las opciones
+        boolean salir = false;
+        while (!salir) {
+            System.out.println("\n--- MENÚ DE PRUEBAS ---");
+            System.out.println("1. Validar cadenas en Autómata 1 (Lira)");
+            System.out.println("2. Ver información técnica y DOT (Lira)");
+            System.out.println("3. Convertir a AFD (Leo)");
+            System.out.println("4. Minimizar (Leo)");
+            System.out.println("5. Cargar un 2do Autómata y comparar (Punto 3 del PDF)");
+            System.out.println("0. Salir");
+            System.out.print("Opción: ");
 
-        // colocamos la informacion basica de este
-        System.out.println("\nResumen del Autómata:");
-        System.out.println("- Tipo: " + (automata.isEsAFND() ? "AFND" : "AFD"));
-        System.out.println("- Alfabeto: " + automata.getAlfabeto());
-        System.out.println("- Cantidad de estados: " + automata.getEstados().size());
+            String opcion = sc.nextLine();
+            switch (opcion) {
+                case "1":
+                    probarCadenas(auto1, sc);
+                    break;
+                case "2":
+                    System.out.println("Tipo: " + (auto1.isEsAFND() ? "AFND" : "AFD"));
+                    System.out.println("Alfabeto: " + auto1.getAlfabeto());
+                    System.out.println("Código DOT generado:\n" + auto1.generarDOT());
+                    break;
+                case "3":
+                    System.out.println("Convirtiendo...");
+                    auto1 = ProcesadorAutomata.convertirAFNDaAFD(auto1);
+                    System.out.println("¡Conversión realizada!");
+                    break;
+                case "4":
+                    System.out.println("Minimizando");
+                    auto1 = ProcesadorAutomata.minimizarAFD(auto1);
+                    System.out.println("Listo");
+                    break;
+                case "5":
+                    Automata auto2 = new Automata();
+                    System.out.print("Ruta del Autómata 2: ");
+                    lector.cargarAutomata(sc.nextLine(), auto2);
+                    boolean eq = ProcesadorAutomata.sonEquivalentes(auto1, auto2);
+                    System.out.println("¿Son equivalentes?: " + (eq ? "SÍ" : "NO"));
+                    break;
+                case "0":
+                    salir = true;
+                    break;
+                default:
+                    System.out.println("Opción no válida.");
+            }
+        }
+    }
 
-        // Aqui validamos la cadena
-        System.out.println("\n--- PRUEBA DE CADENAS ---");
-        System.out.println("Escriba cadenas para validar (o 'salir' para terminar):");
+    // metodo aparte pa que no sea tan enredado
+    private static void probarCadenas(Automata a, Scanner sc) {
+        System.out.println("\n--- MODO VALIDACIÓN (escribe 'volver' para el menú) ---");
         while (true) {
-            System.out.print("Cadena: ");
+            System.out.print("Ingrese cadena: ");
             String cadena = sc.nextLine();
-            if (cadena.equalsIgnoreCase("salir")) break;
+            if (cadena.equalsIgnoreCase("volver")) break;
 
-            boolean esValida = automata.validarCadena(cadena);
-            System.out.println("Resultado: " + (esValida ? "ACEPTADA" : "RECHAZADA"));
+            boolean resultado = a.validarCadena(cadena);
+
+            System.out.println("Resultado: " + (resultado ? "ACEPTADA" : "RECHAZADA"));
         }
-
-        // aca hacemos el archivo para El gravitz
-        System.out.println("\n--- EXPORTACIÓN GRAPHVIZ ---");
-        String xd = automata.generarDOT();
-        try (PrintWriter out = new PrintWriter("automata.dot")) {
-            out.println(xd);
-            System.out.println("Archivo 'automata.dot' generado con éxito.");
-            System.out.println("Para generar la imagen usa: dot -Tpng automata.dot -o automata.png");
-        } catch (Exception e) {
-            System.err.println("Error al generar el archivo DOT: " + e.getMessage());
-        }
-
-        System.out.println("\nFin");
     }
 }

@@ -128,36 +128,35 @@ public class Automata {
     public String generarDOT() {
         StringBuilder dot = new StringBuilder();
         dot.append("digraph G {\n");
-        dot.append("    rankdir=LR;\n"); // Para que el dibujo sea de izquierda a derecha
-        dot.append("    node [shape = point]; start;\n"); // La flechita de inicio
+        dot.append("    rankdir=LR;\n");
 
-        // 1. Dibujar el estado inicial
-        if (estadoInicial != null) {
-            dot.append("    start -> ").append(estadoInicial.getnombre()).append(";\n");
-        }
+        // 1. Definir la flecha de inicio (invisible para que parezca que viene de la nada)
+        dot.append("    node [shape = none, label=\"\"]; start;\n");
 
-        // 2. Marcar los estados finales con doble círculo
-        dot.append("    node [shape = doublecircle];");
+        // 2. Primero declaramos los estados finales (para que hereden el doble círculo)
+        dot.append("    node [shape = doublecircle];\n");
         for (Estado f : estadosFinales.values()) {
-            dot.append(" ").append(f.getnombre());
+            dot.append("    \"").append(f.getnombre()).append("\";\n");
         }
-        dot.append(";\n");
 
-        // 3. Los demás estados son círculos normales
+        // 3. Los demás estados serán círculos normales
         dot.append("    node [shape = circle];\n");
 
-        // 4. Recorrer todas las transiciones
+        // 4. Flecha de entrada al inicial
+        if (estadoInicial != null) {
+            dot.append("    start -> \"").append(estadoInicial.getnombre()).append("\";\n");
+        }
+
+        // 5. Transiciones con comillas de seguridad y etiquetas limpias
         for (Estado origen : estados.values()) {
-            // Obtenemos el mapa de transiciones del estado
             for (String simbolo : origen.getDireccion().keySet()) {
+                // Si el símbolo es tu "!", lo dibujamos como lambda para que se vea pro
+                String label = simbolo.equals("!") ? "λ" : simbolo;
+
                 for (Estado destino : origen.getDestino(simbolo)) {
-                    dot.append("    ")
-                            .append(origen.getnombre())
-                            .append(" -> ")
-                            .append(destino.getnombre())
-                            .append(" [label = \"")
-                            .append(simbolo)
-                            .append("\"];\n");
+                    dot.append("    \"").append(origen.getnombre()).append("\" -> \"")
+                            .append(destino.getnombre()).append("\" [label = \"")
+                            .append(label).append("\"];\n");
                 }
             }
         }
