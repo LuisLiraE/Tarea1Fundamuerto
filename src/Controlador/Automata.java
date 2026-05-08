@@ -56,12 +56,16 @@ public class Automata {
         Estado destino = estados.get(destinoNombre);
 
         // ver si es AFND:
-        // Si el símbolo es lambda (usaremos "!" como convención)
-        if (simbolo.equals("!") || simbolo.equals("lambda")) {
+        // Si el símbolo es lambda (usaremos "!", "lambda" o "eps" como convención)
+        if (simbolo.equals("!") || simbolo.equals("lambda") || simbolo.equals("eps")) {
             this.esAFND = true;
         }
-        // Si el origen ya tiene destinos para ese símbolo (ya existía la llave)
-        if (!origen.getDestino(simbolo).isEmpty()) {
+        
+        // Si el origen ya tiene destinos para ese símbolo, al agregar uno nuevo será AFND
+        if (origen.getDestino(simbolo).size() >= 1) {
+            // Pero solo si el destino que vamos a agregar no es el mismo (para evitar duplicados simples)
+            // (La mayoría de los AFND permiten múltiples transiciones al mismo estado, pero aquí 
+            // nos interesa si hay NO determinismo)
             this.esAFND = true;
         }
 
@@ -69,7 +73,7 @@ public class Automata {
         origen.AgregarTransicion(simbolo, destino);
 
         // Guardamos el símbolo en el alfabeto (si no es lambda)
-        if (!simbolo.equals("!") && !simbolo.equals("lambda")) {
+        if (!simbolo.equals("!") && !simbolo.equals("lambda") && !simbolo.equals("eps")) {
             this.alfabeto.add(simbolo);
         }
     }
@@ -88,6 +92,7 @@ public class Automata {
             for (Estado e : clausura) {
                 nuevos.addAll(e.getDestino("!"));
                 nuevos.addAll(e.getDestino("lambda"));
+                nuevos.addAll(e.getDestino("eps"));
             }
             clausura.addAll(nuevos);
             if (clausura.size() == tamanoInicial) cambios = false;
@@ -133,25 +138,30 @@ public class Automata {
         // 1. Definir la flecha de inicio (invisible para que parezca que viene de la nada)
         dot.append("    node [shape = none, label=\"\"]; start;\n");
 
-        // 2. Primero declaramos los estados finales (para que hereden el doble círculo)
-        dot.append("    node [shape = doublecircle];\n");
+        // 2. Definir estados finales (con doble círculo y su nombre)
+        dot.append("    node [shape = doublecircle, label=\"\\N\"];\n");
         for (Estado f : estadosFinales.values()) {
             dot.append("    \"").append(f.getnombre()).append("\";\n");
         }
 
-        // 3. Los demás estados serán círculos normales
+        // 3. Definir los demás estados (círculos normales con su nombre)
         dot.append("    node [shape = circle];\n");
+        for (Estado e : estados.values()) {
+            if (!e.isesFinal()) {
+                dot.append("    \"").append(e.getnombre()).append("\";\n");
+            }
+        }
 
         // 4. Flecha de entrada al inicial
         if (estadoInicial != null) {
             dot.append("    start -> \"").append(estadoInicial.getnombre()).append("\";\n");
         }
 
-        // 5. Transiciones con comillas de seguridad y etiquetas limpias
+        // 5. Transiciones con etiquetas limpias
         for (Estado origen : estados.values()) {
             for (String simbolo : origen.getDireccion().keySet()) {
-                // Si el símbolo es tu "!", lo dibujamos como lambda para que se vea pro
-                String label = simbolo.equals("!") ? "λ" : simbolo;
+                // Usamos "eps" para representar transiciones vacías (cubriendo todas las convenciones)
+                String label = (simbolo.equals("!") || simbolo.equals("lambda") || simbolo.equals("eps")) ? "eps" : simbolo;
 
                 for (Estado destino : origen.getDestino(simbolo)) {
                     dot.append("    \"").append(origen.getnombre()).append("\" -> \"")
@@ -164,9 +174,56 @@ public class Automata {
         dot.append("}");
         return dot.toString();
     }
+
+    public void dibujar(String nombre) {
+        try {
+            // Usamos un nombre de archivo que incluya el nombre sugerido
+            String dotPath = nombre + ".dot";
+            String pngPath = nombre + ".png";
+            
+            // Guardar el contenido DOT en un archivo
+            java.io.PrintWriter pw = new java.io.PrintWriter(new java.io.FileWriter(dotPath));
+            pw.print(generarDOT());
+            pw.close();
+
+            // Ejecutar el comando de Graphviz
+            // -Gdpi=300 es para mejor calidad si lo deseas
+            ProcessBuilder pb = new ProcessBuilder("dot", "-Tpng", dotPath, "-o", pngPath);
+            Process process = pb.start();
+            
+            // Esperar un poco a que termine el proceso
+            int exitCode = process.waitFor();
+
+            if (exitCode == 0) {
+                System.out.println("Imagen generada con éxito: " + new java.io.File(pngPath).getAbsolutePath());
+                // Intentar abrir la imagen
+                try {
+                    ProcessBuilder openPb = new ProcessBuilder("cmd", "/c", "start", pngPath);
+                    openPb.start();
+                } catch (Exception e) {
+                    System.err.println("No se pudo abrir la imagen automáticamente: " + e.getMessage());
+                }
+            } else {
+                System.err.println("Graphviz devolvió un error (Código: " + exitCode + "). Verifique que el archivo no esté abierto en otro programa.");
+            }
+            
+            // Eliminar el temporal .dot si todo salió bien
+            if (exitCode == 0) {
+                new java.io.File(dotPath).delete();
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error en el proceso de dibujo: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
     // los metodo de Consulta
     public boolean isEsAFND() {
         return this.esAFND;
+    }
+
+    public void setEsAFND(boolean esAFND) {
+        this.esAFND = esAFND;
     }
     public Estado getEstado(String xd) {
         return estados.get(xd);
@@ -177,7 +234,7 @@ public class Automata {
     public HashMap<String, Estado> getEstados() {
         return estados;
     }
-
+    public Estado getEstadoInicial() {return this.estadoInicial;}
 
 
 

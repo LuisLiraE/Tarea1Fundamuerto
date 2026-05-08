@@ -30,19 +30,25 @@ public class Main {
                     probarCadenas(auto1, sc);
                     break;
                 case "2":
+                    System.out.println("--- INFORMACIÓN TÉCNICA ---");
                     System.out.println("Tipo: " + (auto1.isEsAFND() ? "AFND" : "AFD"));
                     System.out.println("Alfabeto: " + auto1.getAlfabeto());
+                    System.out.println("Estados: " + auto1.getEstados().keySet());
                     System.out.println("Código DOT generado:\n" + auto1.generarDOT());
+                    System.out.println("Generando imagen...");
+                    auto1.dibujar("automata_actual");
                     break;
                 case "3":
-                    System.out.println("Convirtiendo...");
+                    System.out.println("Convirtiendo AFND a AFD...");
                     auto1 = ProcesadorAutomata.convertirAFNDaAFD(auto1);
                     System.out.println("¡Conversión realizada!");
+                    auto1.dibujar("automata_afd");
                     break;
                 case "4":
-                    System.out.println("Minimizando");
+                    System.out.println("Minimizando AFD...");
                     auto1 = ProcesadorAutomata.minimizarAFD(auto1);
-                    System.out.println("Listo");
+                    System.out.println("¡Minimización realizada!");
+                    auto1.dibujar("automata_minimo");
                     break;
                 case "5":
                     Automata auto2 = new Automata();

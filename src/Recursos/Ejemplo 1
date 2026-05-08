@@ -1,9 +1,8 @@
-k={q0,q1}
-sigma={a,b}
+k={q0,q1,q2}
+sigma={a,b,eps}
 delta:
-(q0,a,q0)
-(q0,b,q1)
-(q1,a,q0)
-(q1,b,q1)
+(q0,eps,q1)
+(q1,a,q1)
+(q1,b,q2)
 s=q0
-f={q1}
+f={q2}
