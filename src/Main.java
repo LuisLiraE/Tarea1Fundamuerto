@@ -17,7 +17,7 @@ public class Main {
         LectorArchivo lector = new LectorArchivo();
 
         System.out.println("╔══════════════════════════════════════════╗");
-        System.out.println("║   Tarea 1 - Fundamentos de CC  Otoño 2026║");
+        System.out.println("║   Tarea 1 - Fundamentos de CC  Otoño 2026 ║");
         System.out.println("╚══════════════════════════════════════════╝");
 
         // ── Paso 1: cargar los dos autómatas ──────────────────────────────

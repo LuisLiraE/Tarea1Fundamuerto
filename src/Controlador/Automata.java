@@ -145,10 +145,18 @@ public class Automata {
             dot.append("    \"").append(f.getnombre()).append("\";\n");
         }
 
-        // 3. Definir los demás estados (círculos normales con su nombre)
-        dot.append("    node [shape = circle];\n");
+        // 3a. Definir el sumidero con forma especial (gris, para distinguirlo)
+        dot.append("    node [shape = circle, style=filled, fillcolor=\"#cccccc\"];\n");
         for (Estado e : estados.values()) {
-            if (!e.isesFinal()) {
+            if (!e.isesFinal() && e.getnombre().equals("sumidero")) {
+                dot.append("    \"").append(e.getnombre()).append("\";\n");
+            }
+        }
+
+        // 3b. Definir los demás estados normales
+        dot.append("    node [shape = circle, style=filled, fillcolor=\"white\"];\n");
+        for (Estado e : estados.values()) {
+            if (!e.isesFinal() && !e.getnombre().equals("sumidero")) {
                 dot.append("    \"").append(e.getnombre()).append("\";\n");
             }
         }

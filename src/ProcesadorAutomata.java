@@ -63,7 +63,7 @@ public class ProcesadorAutomata {
                 Set<Estado> siguiente = afnd.clausuraLambda(mover);
 
                 if (siguiente.isEmpty()){
-                    String trampa = "Estado trampa";
+                    String trampa = "sumidero";
                     afd.AgregarEstado(trampa);
                     afd.conectar(nombreActual,simbolo,trampa);
 
@@ -112,7 +112,7 @@ public class ProcesadorAutomata {
         Set<String> noFinales = new HashSet<>();
 
         for(Map.Entry<String, Estado> entry : todosEstados.entrySet()){
-            if(entry.getKey().equals("Estado trampa")) continue; // ignorar trampa
+            if(entry.getKey().equals("sumidero")) continue; // el sumidero no entra en particiones
             if(entry.getValue().isesFinal()){
                 finales.add(entry.getKey());
             }else{
@@ -399,15 +399,20 @@ public class ProcesadorAutomata {
         }
 
         // Construir mapeo viejo -> nuevo, con el inicial primero (q0)
-        // Se omite el estado trampa
+        // El sumidero mantiene su nombre; los demás se renombran q0, q1, q2...
         Map<String, String> mapeo = new LinkedHashMap<>();
         String nombreInicial = obtenerNombreInicial(original);
         mapeo.put(nombreInicial, "q0");
         int contador = 1;
         for (String nombre : original.getEstados().keySet()) {
-            if (!nombre.equals(nombreInicial) && !nombre.equals("Estado trampa")) {
+            if (!nombre.equals(nombreInicial) && !nombre.equals("sumidero")) {
                 mapeo.put(nombre, "q" + contador++);
             }
+        }
+        // El sumidero se preserva con su nombre solo si viene del AFD (no del mínimo)
+        // En el mínimo no existirá porque fue excluido de las particiones
+        if (original.getEstados().containsKey("sumidero")) {
+            mapeo.put("sumidero", "sumidero");
         }
 
         // Agregar estados con nuevos nombres
@@ -425,16 +430,16 @@ public class ProcesadorAutomata {
             }
         }
 
-        // Transiciones (se omiten las que van o vienen del trampa)
+        // Transiciones (incluyendo las que van al sumidero)
         for (Map.Entry<String, Estado> entry : original.getEstados().entrySet()) {
             String origenViejo = entry.getKey();
             String origenNuevo = mapeo.get(origenViejo);
-            if (origenNuevo == null) continue; // era trampa, se salta
+            if (origenNuevo == null) continue;
             for (Map.Entry<String, Set<Estado>> trans : entry.getValue().getDireccion().entrySet()) {
                 String simbolo = trans.getKey();
                 for (Estado destino : trans.getValue()) {
                     String destinoNuevo = mapeo.get(destino.getnombre());
-                    if (destinoNuevo != null) { // si es null era trampa, se omite
+                    if (destinoNuevo != null) {
                         nuevo.conectar(origenNuevo, simbolo, destinoNuevo);
                     }
                 }
