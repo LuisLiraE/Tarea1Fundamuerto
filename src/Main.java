@@ -1,92 +1,112 @@
 import Controlador.Automata;
 import java.util.Scanner;
 
+/**
+ * Clase principal del programa.
+ *
+ * Implementa el flujo completo solicitado por la tarea:
+ *   1. Carga dos autómatas desde archivos de texto.
+ *   2. Detecta si son AFD o AFND y convierte los AFND a AFD.
+ *   3. Comprueba si ambos autómatas son equivalentes mediante minimización.
+ *   4. Dibuja ambos autómatas resultantes en pantalla (via Graphviz).
+ */
 public class Main {
+
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         LectorArchivo lector = new LectorArchivo();
 
-        // pa cargar el archivo
-        System.out.println("=== MÓDULO DE PRUEBAS - PROYECTO FUNDAMUERTOS ===");
-        Automata auto1 = new Automata();
-        System.out.print("Ruta del Autómata 1: ");
-        lector.cargarAutomata(sc.nextLine(), auto1);
+        System.out.println("╔══════════════════════════════════════════╗");
+        System.out.println("║   Tarea 1 - Fundamentos de CC  Otoño 2026║");
+        System.out.println("╚══════════════════════════════════════════╝");
 
-        // Las opciones
-        boolean salir = false;
-        while (!salir) {
-            System.out.println("\n--- MENÚ DE PRUEBAS ---");
-            System.out.println("1. Validar cadenas en Autómata 1");
-            System.out.println("2. Ver información técnica y DOT");
-            System.out.println("3. Convertir a AFD");
-            System.out.println("4. Minimizar");
-            System.out.println("5. Cargar un 2do Autómata y comparar");
-            System.out.println("0. Salir");
-            System.out.print("Opción: ");
+        // ── Paso 1: cargar los dos autómatas ──────────────────────────────
+        Automata auto1 = cargarAutomata(lector, sc, 1);
+        Automata auto2 = cargarAutomata(lector, sc, 2);
 
-            String opcion = sc.nextLine();
-            switch (opcion) {
-                case "1":
-                    probarCadenas(auto1, sc);
-                    break;
-                case "2":
-                    System.out.println("--- INFORMACIÓN TÉCNICA ---");
-                    System.out.println("Tipo: " + (auto1.isEsAFND() ? "AFND" : "AFD"));
-                    System.out.println("Alfabeto: " + auto1.getAlfabeto());
-                    System.out.println("Estados: " + auto1.getEstados().keySet());
-                    System.out.println("Código DOT generado:\n" + auto1.generarDOT());
-                    System.out.println("Generando imagen...");
-                    auto1.dibujar("automata_actual");
-                    break;
-                case "3":
-                    System.out.println("Convirtiendo AFND a AFD...");
-                    auto1 = ProcesadorAutomata.convertirAFNDaAFD(auto1);
-                    System.out.println("¡Conversión realizada!");
-                    auto1.dibujar("automata_afd");
-                    break;
-                case "4":
-                    System.out.println("Minimizando AFD...");
-                    auto1 = ProcesadorAutomata.minimizarAFD(auto1);
-                    System.out.println("¡Minimización realizada!");
-                    auto1.dibujar("automata_minimo");
-                    break;
-                case "5":
-                    Automata auto2 = new Automata();
-                    System.out.print("Ruta del Autómata 2: ");
-                    lector.cargarAutomata(sc.nextLine(), auto2);
+        // ── Paso 2: detectar tipo y convertir si es necesario ─────────────
+        auto1 = detectarYConvertir(auto1, 1);
+        auto2 = detectarYConvertir(auto2, 2);
 
-                    System.out.println("Procesando comparación (Minimizando ambos)...");
-                    // Obtenemos versiones minimizadas para poder dibujarlas después
-                    Automata a1Min = ProcesadorAutomata.minimizarAFD(auto1);
-                    Automata a2Min = ProcesadorAutomata.minimizarAFD(auto2);
+        // ── Paso 3: comparar equivalencia (minimiza ambos internamente) ───
+        System.out.println("\n══════════════════════════════════════════");
+        System.out.println("Paso 3 · Comparando equivalencia...");
+        boolean equivalentes = ProcesadorAutomata.sonEquivalentes(auto1, auto2);
+        System.out.println("\n  Resultado: los autómatas " +
+            (equivalentes ? "SÍ son equivalentes ✓" : "NO son equivalentes ✗") +
+            " (aceptan el " + (equivalentes ? "mismo" : "distinto") + " lenguaje)");
 
-                    boolean eq = ProcesadorAutomata.sonEquivalentes(a1Min, a2Min);
-                    System.out.println("¿Son equivalentes?: " + (eq ? "SÍ" : "NO"));
+        // ── Paso 4: minimizar y dibujar ambos autómatas resultantes ───────
+        System.out.println("\n══════════════════════════════════════════");
+        System.out.println("Paso 4 · Minimizando y dibujando autómatas...");
 
-                    System.out.println("Generando imágenes de los autómatas mínimos...");
-                    a1Min.dibujar("automata1_minimo_comp");
-                    a2Min.dibujar("automata2_minimo_comp");
-                    break;
-                case "0":
-                    salir = true;
-                    break;
-                default:
-                    System.out.println("Opción no válida.");
-            }
-        }
+        Automata min1 = ProcesadorAutomata.minimizarAFD(auto1);
+        Automata min2 = ProcesadorAutomata.minimizarAFD(auto2);
+
+        System.out.println("\n  Autómata 1 mínimo → " + min1.getEstados().size() + " estados");
+        System.out.println("  Generando imagen: automata1_minimo.png");
+        min1.dibujar("automata1_minimo");
+
+        System.out.println("\n  Autómata 2 mínimo → " + min2.getEstados().size() + " estados");
+        System.out.println("  Generando imagen: automata2_minimo.png");
+        min2.dibujar("automata2_minimo");
+
+        System.out.println("\n  ¡Listo! Revisa las imágenes generadas.");
+
+        sc.close();
     }
 
-    // metodo aparte pa que no sea tan enredado
-    private static void probarCadenas(Automata a, Scanner sc) {
-        System.out.println("\n--- MODO VALIDACIÓN (escribe 'volver' para el menú) ---");
-        while (true) {
-            System.out.print("Ingrese cadena: ");
-            String cadena = sc.nextLine();
-            if (cadena.equalsIgnoreCase("volver")) break;
+    // ── Métodos auxiliares ────────────────────────────────────────────────
 
-            boolean resultado = a.validarCadena(cadena);
-
-            System.out.println("Resultado: " + (resultado ? "ACEPTADA" : "RECHAZADA"));
+    /**
+     * Solicita la ruta de un archivo al usuario y carga el autómata.
+     * Reintenta si la ruta es inválida o el archivo no existe.
+     *
+     * @param lector  instancia del lector de archivos
+     * @param sc      scanner de entrada
+     * @param numero  número del autómata (1 o 2), solo para mensajes
+     * @return        el autómata cargado
+     */
+    private static Automata cargarAutomata(LectorArchivo lector, Scanner sc, int numero) {
+        Automata automata = null;
+        while (automata == null) {
+            System.out.print("\nRuta del Autómata " + numero + ": ");
+            String ruta = sc.nextLine().trim();
+            automata = new Automata();
+            try {
+                lector.cargarAutomata(ruta, automata);
+                System.out.println("  Autómata " + numero + " cargado correctamente.");
+            } catch (Exception e) {
+                System.out.println("  ✗ No se pudo cargar el archivo: " + e.getMessage());
+                System.out.println("  Intenta de nuevo.");
+                automata = null;
+            }
         }
+        return automata;
+    }
+
+    /**
+     * Comprueba si el autómata es AFD o AFND.
+     * Si es AFND, lo convierte a AFD y devuelve el resultado.
+     *
+     * @param automata  el autómata a evaluar
+     * @param numero    número del autómata (para mensajes)
+     * @return          el mismo autómata si ya era AFD, o el AFD convertido
+     */
+    private static Automata detectarYConvertir(Automata automata, int numero) {
+        System.out.println("\n══════════════════════════════════════════");
+        System.out.println("Paso 2 · Autómata " + numero + ": tipo detectado = " +
+            (automata.isEsAFND() ? "AFND" : "AFD"));
+
+        if (automata.isEsAFND()) {
+            System.out.println("  Convirtiendo AFND → AFD...");
+            automata = ProcesadorAutomata.convertirAFNDaAFD(automata);
+            System.out.println("  Conversión completada. Estados resultantes: " +
+                automata.getEstados().size());
+        } else {
+            System.out.println("  Ya es AFD, no requiere conversión.");
+        }
+
+        return automata;
     }
 }

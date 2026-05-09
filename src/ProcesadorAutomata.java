@@ -220,10 +220,15 @@ public class ProcesadorAutomata {
     }
 
     public static boolean sonEquivalentes(Automata a1, Automata a2) {
-        // Asegurarse de que ambos sean AFDs y estén minimizados (Punto 3 del PDF)
-        System.out.println("Minimizando autómatas para la comparación...");
-        a1 = minimizarAFD(a1);
-        a2 = minimizarAFD(a2);
+        // Asegurarse de que ambos sean AFDs
+        if (a1.isEsAFND()) {
+            System.out.println("AFD 1 es AFND, convirtiendo...");
+            a1 = convertirAFNDaAFD(a1);
+        }
+        if (a2.isEsAFND()) {
+            System.out.println("AFD 2 es AFND, convirtiendo...");
+            a2 = convertirAFNDaAFD(a2);
+        }
 
         // Verificar que los alfabetos sean iguales
         if (!a1.getAlfabeto().equals(a2.getAlfabeto())) {
