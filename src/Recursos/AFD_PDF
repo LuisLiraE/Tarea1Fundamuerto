@@ -2,8 +2,10 @@ k={q0,q1,q2}
 sigma={a,b}
 delta:
 (q0,a,q0)
-(q0,eps,q1)
+(q0,b,q1)
+(q1,a,q1)
 (q1,b,q2)
-(q2,b,q2)
+(q2,a,q2)
+(q2,b,q0)
 s=q0
-f={q2}
+f={q1}
