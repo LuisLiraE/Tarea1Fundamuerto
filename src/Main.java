@@ -54,8 +54,18 @@ public class Main {
                     Automata auto2 = new Automata();
                     System.out.print("Ruta del Autómata 2: ");
                     lector.cargarAutomata(sc.nextLine(), auto2);
-                    boolean eq = ProcesadorAutomata.sonEquivalentes(auto1, auto2);
+
+                    System.out.println("Procesando comparación (Minimizando ambos)...");
+                    // Obtenemos versiones minimizadas para poder dibujarlas después
+                    Automata a1Min = ProcesadorAutomata.minimizarAFD(auto1);
+                    Automata a2Min = ProcesadorAutomata.minimizarAFD(auto2);
+
+                    boolean eq = ProcesadorAutomata.sonEquivalentes(a1Min, a2Min);
                     System.out.println("¿Son equivalentes?: " + (eq ? "SÍ" : "NO"));
+
+                    System.out.println("Generando imágenes de los autómatas mínimos...");
+                    a1Min.dibujar("automata1_minimo_comp");
+                    a2Min.dibujar("automata2_minimo_comp");
                     break;
                 case "0":
                     salir = true;
