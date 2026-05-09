@@ -35,16 +35,15 @@ public class Automata {
 
     }
     public void MarcarEstadoFinal(String xd) {
-        // se busca el objetito
-        Estado e = this.estados.get(xd);
-        if (e != null) {
-            // lo cambiamos a final por dentro
-            e.setEsFinal(true);
-
-            // se agrega a la lista de finales
-            this.estadosFinales.put(xd, e);
+        // Si no existe el estado, lo creamos primero
+        if (!this.estados.containsKey(xd)) {
+            this.estados.put(xd, new Estado(xd));
         }
-        // nose que hacer si null jsjsj, por ahora...
+        Estado e = this.estados.get(xd);
+        // lo cambiamos a final por dentro
+        e.setEsFinal(true);
+        // se agrega a la lista de finales
+        this.estadosFinales.put(xd, e);
     }
 
     public void conectar(String origenNombre, String simbolo, String destinoNombre) {
@@ -78,8 +77,10 @@ public class Automata {
         }
     }
     public void agregarAlfabeto(String simbolo) {
-        // agregado simple
-        this.alfabeto.add(simbolo);
+        // No agregar epsilon al alfabeto real (es una convención de transición vacía, no un símbolo)
+        if (!simbolo.equals("!") && !simbolo.equals("lambda") && !simbolo.equals("eps")) {
+            this.alfabeto.add(simbolo);
+        }
     }
 
     public Set<Estado> clausuraLambda(Set<Estado> estados) {

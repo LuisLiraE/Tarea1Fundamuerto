@@ -16,11 +16,11 @@ public class Main {
         boolean salir = false;
         while (!salir) {
             System.out.println("\n--- MENÚ DE PRUEBAS ---");
-            System.out.println("1. Validar cadenas en Autómata 1 (Lira)");
-            System.out.println("2. Ver información técnica y DOT (Lira)");
-            System.out.println("3. Convertir a AFD (Leo)");
-            System.out.println("4. Minimizar (Leo)");
-            System.out.println("5. Cargar un 2do Autómata y comparar (Punto 3 del PDF)");
+            System.out.println("1. Validar cadenas en Autómata 1");
+            System.out.println("2. Ver información técnica y DOT");
+            System.out.println("3. Convertir a AFD");
+            System.out.println("4. Minimizar");
+            System.out.println("5. Cargar un 2do Autómata y comparar");
             System.out.println("0. Salir");
             System.out.print("Opción: ");
 

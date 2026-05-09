@@ -52,6 +52,8 @@ public class ProcesadorAutomata {
 
             //para cada simbolo del alfabeto calculamos donde ira este conjunto
             for(String simbolo: sigma){
+                // Saltamos epsilon, no es un simbolo real del AFD
+                if (simbolo.equals("!") || simbolo.equals("lambda") || simbolo.equals("eps")) continue;
 
                 Set<Estado> mover = new HashSet<>();
                 for(Estado e : conjuntoActual){
@@ -68,6 +70,7 @@ public class ProcesadorAutomata {
                     if(!procesados.containsKey(trampa)){
                         procesados.put(trampa, new HashSet<>());
                         for(String s2 : sigma){
+                            if (s2.equals("!") || s2.equals("lambda") || s2.equals("eps")) continue;
                             afd.conectar(trampa, s2 , trampa);
                         }
 
@@ -88,18 +91,28 @@ public class ProcesadorAutomata {
                 }
             }
         }
-        return afd;
+
+        // Renombrar estados del AFD a q0, q1, q2... (el inicial siempre queda como q0)
+        return renombrarEstados(afd);
     }
 
     public static Automata minimizarAFD(Automata afd) {
+        // Si es AFND, convertir primero
+        if (afd.isEsAFND()) {
+            System.out.println("El autómata es AFND, convirtiendo a AFD primero...");
+            afd = convertirAFNDaAFD(afd);
+        }
+
         Set<String> sigma = afd.getAlfabeto();
         HashMap<String, Estado> todosEstados = afd.getEstados();
 
         //Particion inicial: Grupo 0 "Estados finales"  Grupo 1 "Estados no finales"
+        // Se excluye el estado trampa de las particiones (no aparece en el resultado)
         Set<String> finales = new HashSet<>();
         Set<String> noFinales = new HashSet<>();
 
         for(Map.Entry<String, Estado> entry : todosEstados.entrySet()){
+            if(entry.getKey().equals("Estado trampa")) continue; // ignorar trampa
             if(entry.getValue().isesFinal()){
                 finales.add(entry.getKey());
             }else{
@@ -134,6 +147,34 @@ public class ProcesadorAutomata {
             particiones= nuevasParticiones;
         }
 
+        // --- Renombrar particiones a q0, q1, q2... con el inicial siempre como q0 ---
+        String nombreInicial = obtenerNombreInicial(afd);
+
+        // Aseguramos que el grupo que contiene el estado inicial quede primero (será q0)
+        List<Set<String>> particionesOrdenadas = new ArrayList<>();
+        Set<String> grupoInicial = null;
+        for (Set<String> grupo : particiones) {
+            if (grupo.contains(nombreInicial)) {
+                grupoInicial = grupo;
+            }
+        }
+        if (grupoInicial != null) particionesOrdenadas.add(grupoInicial);
+        for (Set<String> grupo : particiones) {
+            if (grupo != grupoInicial) particionesOrdenadas.add(grupo);
+        }
+
+        // Asignar nombre simple a cada partición
+        Map<String, String> estadoAgrupos = new HashMap<>();
+        int contador = 0;
+        Map<Set<String>, String> nombreParticion = new HashMap<>();
+        for (Set<String> grupo : particionesOrdenadas) {
+            String nombreSimple = "q" + contador++;
+            nombreParticion.put(grupo, nombreSimple);
+            for (String e : grupo) {
+                estadoAgrupos.put(e, nombreSimple);
+            }
+        }
+
         Automata minimo = new Automata();
 
         //copiar el alfabeto
@@ -141,20 +182,14 @@ public class ProcesadorAutomata {
             minimo.agregarAlfabeto(s);
         }
 
-        Map<String,String> estadoAgrupos = new HashMap<>();
-        for(Set<String> grupo : particiones){
-            String nombreGrupo = conjuntoStringANombre(grupo);
-            for(String e : grupo){
-                estadoAgrupos.put(e, nombreGrupo);
-            }
-            minimo.AgregarEstado(nombreGrupo);
+        for (Set<String> grupo : particionesOrdenadas) {
+            minimo.AgregarEstado(nombreParticion.get(grupo));
         }
 
-        String nombreInicial = obtenerNombreInicial(afd);
-        String grupoInicial = estadoAgrupos.get(nombreInicial);
-        minimo.setInicial(grupoInicial);
+        String grupoInicialNombre = estadoAgrupos.get(nombreInicial);
+        minimo.setInicial(grupoInicialNombre);
 
-        for (Set<String> grupo : particiones) {
+        for (Set<String> grupo : particionesOrdenadas) {
             // Un grupo es final si CUALQUIERA de sus estados era final
             for (String e : grupo) {
                 if (afd.getEstado(e) != null && afd.getEstado(e).isesFinal()) {
@@ -163,7 +198,7 @@ public class ProcesadorAutomata {
                 }
             }
         }
-        for (Set<String> grupo : particiones) {
+        for (Set<String> grupo : particionesOrdenadas) {
             // Tomamos un representante del grupo
             String representante = grupo.iterator().next();
             String nombreOrigen  = estadoAgrupos.get(representante);
@@ -333,9 +368,9 @@ public class ProcesadorAutomata {
 
     private static String obtenerDestino(Automata afd, String estado, String simbolo) {
         Estado e = afd.getEstado(estado);
-        if (e == null) return "Estado Trampa";
+        if (e == null) return "Estado trampa";
         Set<Estado> destinos = e.getDestino(simbolo);
-        if (destinos.isEmpty()) return "Estado Trampa";
+        if (destinos.isEmpty()) return "Estado trampa";
         return destinos.iterator().next().getnombre();
     }
 
@@ -350,5 +385,62 @@ public class ProcesadorAutomata {
         List<String> nombres = new ArrayList<>(conjunto);
         Collections.sort(nombres);
         return "{" + String.join(",", nombres) + "}";
+    }
+
+    // Renombra todos los estados de un automata a q0, q1, q2...
+    // El estado inicial siempre queda como q0.
+    // Los estados trampa se eliminan (no se incluyen en el resultado).
+    private static Automata renombrarEstados(Automata original) {
+        Automata nuevo = new Automata();
+
+        // Copiar alfabeto
+        for (String s : original.getAlfabeto()) {
+            nuevo.agregarAlfabeto(s);
+        }
+
+        // Construir mapeo viejo -> nuevo, con el inicial primero (q0)
+        // Se omite el estado trampa
+        Map<String, String> mapeo = new LinkedHashMap<>();
+        String nombreInicial = obtenerNombreInicial(original);
+        mapeo.put(nombreInicial, "q0");
+        int contador = 1;
+        for (String nombre : original.getEstados().keySet()) {
+            if (!nombre.equals(nombreInicial) && !nombre.equals("Estado trampa")) {
+                mapeo.put(nombre, "q" + contador++);
+            }
+        }
+
+        // Agregar estados con nuevos nombres
+        for (String nuevoNombre : mapeo.values()) {
+            nuevo.AgregarEstado(nuevoNombre);
+        }
+
+        // Estado inicial
+        nuevo.setInicial("q0");
+
+        // Estados finales
+        for (Map.Entry<String, Estado> entry : original.getEstados().entrySet()) {
+            if (entry.getValue().isesFinal() && mapeo.containsKey(entry.getKey())) {
+                nuevo.MarcarEstadoFinal(mapeo.get(entry.getKey()));
+            }
+        }
+
+        // Transiciones (se omiten las que van o vienen del trampa)
+        for (Map.Entry<String, Estado> entry : original.getEstados().entrySet()) {
+            String origenViejo = entry.getKey();
+            String origenNuevo = mapeo.get(origenViejo);
+            if (origenNuevo == null) continue; // era trampa, se salta
+            for (Map.Entry<String, Set<Estado>> trans : entry.getValue().getDireccion().entrySet()) {
+                String simbolo = trans.getKey();
+                for (Estado destino : trans.getValue()) {
+                    String destinoNuevo = mapeo.get(destino.getnombre());
+                    if (destinoNuevo != null) { // si es null era trampa, se omite
+                        nuevo.conectar(origenNuevo, simbolo, destinoNuevo);
+                    }
+                }
+            }
+        }
+
+        return nuevo;
     }
 }
