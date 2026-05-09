@@ -1,4 +1,6 @@
 import Controlador.Automata;
+import Modelo.ProcesadorAutomata;
+
 import java.util.Scanner;
 
 /**
@@ -17,26 +19,37 @@ public class Main {
         LectorArchivo lector = new LectorArchivo();
 
         System.out.println("╔══════════════════════════════════════════╗");
-        System.out.println("║   Tarea 1 - Fundamentos de CC  Otoño 2026 ║");
+        System.out.println("║   Tarea 1 - Fundamentos de CC  Otoño 2026║");
         System.out.println("╚══════════════════════════════════════════╝");
 
-        // ── Paso 1: cargar los dos autómatas ──────────────────────────────
+        // primero se cargan los dos autómatas ──────────────────────────────
         Automata auto1 = cargarAutomata(lector, sc, 1);
         Automata auto2 = cargarAutomata(lector, sc, 2);
 
-        // ── Paso 2: detectar tipo y convertir si es necesario ─────────────
+        // Luego se  detecta el tipo y se convierte si es necesario ─────────────
         auto1 = detectarYConvertir(auto1, 1);
         auto2 = detectarYConvertir(auto2, 2);
 
-        // ── Paso 3: comparar equivalencia (minimiza ambos internamente) ───
+        // Aqui los minimiza y luego los compara ───
         System.out.println("\n══════════════════════════════════════════");
-        System.out.println("Paso 3 · Comparando equivalencia...");
+        System.out.println("Paso 3 · Comparar equivalencia");
         boolean equivalentes = ProcesadorAutomata.sonEquivalentes(auto1, auto2);
-        System.out.println("\n  Resultado: los autómatas " +
-            (equivalentes ? "SÍ son equivalentes ✓" : "NO son equivalentes ✗") +
-            " (aceptan el " + (equivalentes ? "mismo" : "distinto") + " lenguaje)");
+        String mensaje;
+        String lenguaje;
 
-        // ── Paso 4: minimizar y dibujar ambos autómatas resultantes ───────
+        if (equivalentes) {
+            mensaje = "SÍ son equivalentes ✓";
+            lenguaje = "mismo";
+        } else {
+            mensaje = "NO son equivalentes ✗";
+            lenguaje = "distinto";
+        }
+
+        System.out.println("\nResultado: los autómatas " +
+                mensaje +
+                " (aceptan el " + lenguaje + " lenguaje)");
+
+        // Por ultimo minimizar y dibujar ambos autómatas resultantes ───────
         System.out.println("\n══════════════════════════════════════════");
         System.out.println("Paso 4 · Minimizando y dibujando autómatas...");
 
@@ -56,17 +69,9 @@ public class Main {
         sc.close();
     }
 
-    // ── Métodos auxiliares ────────────────────────────────────────────────
+    //  Métodos auxiliares
 
-    /**
-     * Solicita la ruta de un archivo al usuario y carga el autómata.
-     * Reintenta si la ruta es inválida o el archivo no existe.
-     *
-     * @param lector  instancia del lector de archivos
-     * @param sc      scanner de entrada
-     * @param numero  número del autómata (1 o 2), solo para mensajes
-     * @return        el autómata cargado
-     */
+
     private static Automata cargarAutomata(LectorArchivo lector, Scanner sc, int numero) {
         Automata automata = null;
         while (automata == null) {
@@ -85,14 +90,7 @@ public class Main {
         return automata;
     }
 
-    /**
-     * Comprueba si el autómata es AFD o AFND.
-     * Si es AFND, lo convierte a AFD y devuelve el resultado.
-     *
-     * @param automata  el autómata a evaluar
-     * @param numero    número del autómata (para mensajes)
-     * @return          el mismo autómata si ya era AFD, o el AFD convertido
-     */
+
     private static Automata detectarYConvertir(Automata automata, int numero) {
         System.out.println("\n══════════════════════════════════════════");
         System.out.println("Paso 2 · Autómata " + numero + ": tipo detectado = " +
@@ -101,8 +99,7 @@ public class Main {
         if (automata.isEsAFND()) {
             System.out.println("  Convirtiendo AFND → AFD...");
             automata = ProcesadorAutomata.convertirAFNDaAFD(automata);
-            System.out.println("  Conversión completada. Estados resultantes: " +
-                automata.getEstados().size());
+            System.out.println("  Conversión completada.");
         } else {
             System.out.println("  Ya es AFD, no requiere conversión.");
         }

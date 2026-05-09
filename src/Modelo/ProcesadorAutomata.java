@@ -1,5 +1,6 @@
+package Modelo;
+
 import Controlador.Automata;
-import Modelo.Estado;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -46,14 +47,15 @@ public class ProcesadorAutomata {
         pendientes.add(conjuntoInicial);
         procesados.put(nombreInicial, conjuntoInicial);
 
+
         while(!pendientes.isEmpty()) {
             Set<Estado> conjuntoActual = pendientes.poll();
             String nombreActual = conjuntoANombre(conjuntoActual);
 
             //para cada simbolo del alfabeto calculamos donde ira este conjunto
             for(String simbolo: sigma){
-                // Saltamos epsilon, no es un simbolo real del AFD
-                if (simbolo.equals("!") || simbolo.equals("lambda") || simbolo.equals("eps")) continue;
+                // Saltamos epsilon ya que no es un simbolo real del AFD
+                if ( simbolo.equals("eps")) continue;
 
                 Set<Estado> mover = new HashSet<>();
                 for(Estado e : conjuntoActual){
@@ -70,7 +72,7 @@ public class ProcesadorAutomata {
                     if(!procesados.containsKey(trampa)){
                         procesados.put(trampa, new HashSet<>());
                         for(String s2 : sigma){
-                            if (s2.equals("!") || s2.equals("lambda") || s2.equals("eps")) continue;
+                            if (s2.equals("eps")) continue;
                             afd.conectar(trampa, s2 , trampa);
                         }
 
@@ -92,7 +94,7 @@ public class ProcesadorAutomata {
             }
         }
 
-        // Renombrar estados del AFD a q0, q1, q2... (el inicial siempre queda como q0)
+        // Renombrar estados del AFD
         return renombrarEstados(afd);
     }
 
@@ -198,6 +200,9 @@ public class ProcesadorAutomata {
                 }
             }
         }
+        // Flag para saber si necesitamos agregar el estado sumidero al mínimo
+        boolean necesitaSumidero = false;
+
         for (Set<String> grupo : particionesOrdenadas) {
             // Tomamos un representante del grupo
             String representante = grupo.iterator().next();
@@ -211,8 +216,24 @@ public class ProcesadorAutomata {
                     String nombreDestino = estadoAgrupos.get(destino.getnombre());
                     if (nombreDestino != null) {
                         minimo.conectar(nombreOrigen, simbolo, nombreDestino);
+                    } else {
+                        // El destino era el sumidero (excluido de particiones): lo re-introducimos
+                        necesitaSumidero = true;
+                        minimo.conectar(nombreOrigen, simbolo, "sumidero");
                     }
+                } else {
+                    // El representante no tenía transición para este símbolo → va al sumidero
+                    necesitaSumidero = true;
+                    minimo.conectar(nombreOrigen, simbolo, "sumidero");
                 }
+            }
+        }
+
+        // Si algún estado apunta al sumidero, lo agregamos con sus auto-transiciones
+        if (necesitaSumidero) {
+            minimo.AgregarEstado("sumidero");
+            for (String simbolo : sigma) {
+                minimo.conectar("sumidero", simbolo, "sumidero");
             }
         }
 
@@ -387,9 +408,7 @@ public class ProcesadorAutomata {
         return "{" + String.join(",", nombres) + "}";
     }
 
-    // Renombra todos los estados de un automata a q0, q1, q2...
-    // El estado inicial siempre queda como q0.
-    // Los estados trampa se eliminan (no se incluyen en el resultado).
+
     private static Automata renombrarEstados(Automata original) {
         Automata nuevo = new Automata();
 

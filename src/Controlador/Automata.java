@@ -55,20 +55,18 @@ public class Automata {
         Estado destino = estados.get(destinoNombre);
 
         // ver si es AFND:
-        // Si el símbolo es lambda (usaremos "!", "lambda" o "eps" como convención)
-        if (simbolo.equals("!") || simbolo.equals("lambda") || simbolo.equals("eps")) {
+        // Si el símbolo es lambda usamos "eps")
+        if (simbolo.equals("eps")) {
             this.esAFND = true;
         }
         
         // Si el origen ya tiene destinos para ese símbolo, al agregar uno nuevo será AFND
         if (origen.getDestino(simbolo).size() >= 1) {
-            // Pero solo si el destino que vamos a agregar no es el mismo (para evitar duplicados simples)
-            // (La mayoría de los AFND permiten múltiples transiciones al mismo estado, pero aquí 
-            // nos interesa si hay NO determinismo)
+            // Pero solo si el destino que vamos a agregar no es el mismo.
             this.esAFND = true;
         }
 
-        // Realizamos la conexión
+        // Aqui hacemo la conexion
         origen.AgregarTransicion(simbolo, destino);
 
         // Guardamos el símbolo en el alfabeto (si no es lambda)
@@ -78,7 +76,7 @@ public class Automata {
     }
     public void agregarAlfabeto(String simbolo) {
         // No agregar epsilon al alfabeto real (es una convención de transición vacía, no un símbolo)
-        if (!simbolo.equals("!") && !simbolo.equals("lambda") && !simbolo.equals("eps")) {
+        if (!simbolo.equals("eps")) {
             this.alfabeto.add(simbolo);
         }
     }
@@ -91,8 +89,7 @@ public class Automata {
             int tamanoInicial = clausura.size();
             Set<Estado> nuevos = new HashSet<>();
             for (Estado e : clausura) {
-                nuevos.addAll(e.getDestino("!"));
-                nuevos.addAll(e.getDestino("lambda"));
+
                 nuevos.addAll(e.getDestino("eps"));
             }
             clausura.addAll(nuevos);
@@ -101,51 +98,21 @@ public class Automata {
         return clausura;
     }
 
-    public boolean validarCadena(String cadena) {
-        if (this.estadoInicial == null) return false;
-
-        Set<Estado> estadosActuales = new HashSet<>();
-        estadosActuales.add(this.estadoInicial);
-        
-        // Aplicar clausura lambda inicial
-        estadosActuales = clausuraLambda(estadosActuales);
-
-        for (int i = 0; i < cadena.length(); i++) {
-            String simbolo = String.valueOf(cadena.charAt(i));
-            Set<Estado> proximosEstados = new HashSet<>();
-
-            for (Estado e : estadosActuales) {
-                proximosEstados.addAll(e.getDestino(simbolo));
-            }
-
-            if (proximosEstados.isEmpty()) return false;
-
-            // Después de cada símbolo calculamos la clausura lambda para ver lo estados alcanzables
-            estadosActuales = clausuraLambda(proximosEstados);
-        }
-
-        for (Estado e : estadosActuales) {
-            if (e.isesFinal()) return true;
-        }
-
-        return false;
-    }
-
     public String generarDOT() {
         StringBuilder dot = new StringBuilder();
         dot.append("digraph G {\n");
         dot.append("    rankdir=LR;\n");
 
-        // 1. Definir la flecha de inicio (invisible para que parezca que viene de la nada)
+        // primero se Define la flecha de inicio invisible para que parezca que viene de la nada
         dot.append("    node [shape = none, label=\"\"]; start;\n");
 
-        // 2. Definir estados finales (con doble círculo y su nombre)
+        // segundo se Define  los estados finales con doble círculo y su nombre
         dot.append("    node [shape = doublecircle, label=\"\\N\"];\n");
         for (Estado f : estadosFinales.values()) {
             dot.append("    \"").append(f.getnombre()).append("\";\n");
         }
 
-        // 3a. Definir el sumidero con forma especial (gris, para distinguirlo)
+        // tercero Definir el sumidero con forma especial gris para distinguirlo
         dot.append("    node [shape = circle, style=filled, fillcolor=\"#cccccc\"];\n");
         for (Estado e : estados.values()) {
             if (!e.isesFinal() && e.getnombre().equals("sumidero")) {
@@ -196,7 +163,6 @@ public class Automata {
             pw.close();
 
             // Ejecutar el comando de Graphviz
-            // -Gdpi=300 es para mejor calidad si lo deseas
             ProcessBuilder pb = new ProcessBuilder("dot", "-Tpng", dotPath, "-o", pngPath);
             Process process = pb.start();
             
@@ -204,7 +170,7 @@ public class Automata {
             int exitCode = process.waitFor();
 
             if (exitCode == 0) {
-                System.out.println("Imagen generada con éxito: " + new java.io.File(pngPath).getAbsolutePath());
+                System.out.println("Imagen generada" + new java.io.File(pngPath).getAbsolutePath());
                 // Intentar abrir la imagen
                 try {
                     ProcessBuilder openPb = new ProcessBuilder("cmd", "/c", "start", pngPath);
@@ -216,7 +182,7 @@ public class Automata {
                 System.err.println("Graphviz devolvió un error (Código: " + exitCode + "). Verifique que el archivo no esté abierto en otro programa.");
             }
             
-            // Eliminar el temporal .dot si todo salió bien
+            // Eliminar el temporal .dot si t odo salió bien
             if (exitCode == 0) {
                 new java.io.File(dotPath).delete();
             }

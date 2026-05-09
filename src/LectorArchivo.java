@@ -14,23 +14,23 @@ public class LectorArchivo {
                 linea = linea.trim();
                 if (linea.isEmpty()) continue;
 
-                // Si la línea es "delta:", activamos el modo de lectura de transiciones
+                // Si dice "delta", activamos el modo de lectura de transiciones
                 if (linea.equalsIgnoreCase("delta:")) {
                     leyendoDelta = true;
                     continue;
                 }
 
-                // Manejo de transiciones (origen, simbolo, destino)
+                // aqui vemos como son las transiciones (origen, simbolo, destino)
                 if (leyendoDelta && linea.startsWith("(") && linea.endsWith(")")) {
-                    String contenido = linea.substring(1, linea.length() - 1);
-                    String[] partes = contenido.split(",");
+                    String contenido = linea.substring(1, linea.length() - 1); // para quitar los parentesis
+                    String[] partes = contenido.split(","); // esto para separar por las ,
                     if (partes.length == 3) {
-                        auto.conectar(partes[0].trim(), partes[1].trim(), partes[2].trim());
+                        auto.conectar(partes[0].trim(), partes[1].trim(), partes[2].trim()); //aqui se verifica que sean 3 partes (origen, simbolo, destino)
                     }
                     continue;
                 }
 
-                // Aqui se manejo lo de k=, sigma=, s=, f=
+                // Aqui se maneja lo de k, sigma, s, f
                 if (linea.contains("=")) {
                     String[] partes = linea.split("=");
                     if (partes.length < 2) continue;
@@ -38,19 +38,19 @@ public class LectorArchivo {
                     String etiqueta = partes[0].trim().toLowerCase();
                     String valor = partes[1].trim();
 
-                    // Limpiar llaves { } si esque existen
+                    // aqui se Limpiar llavessi esque existen
                     if (valor.startsWith("{") && valor.endsWith("}")) {
                         valor = valor.substring(1, valor.length() - 1);
                     }
 
                     switch (etiqueta) {
-                        case "k": // ESTADOS
+                        case "k": // estados
                             for (String n : valor.split(",")) {
                                 auto.AgregarEstado(n.trim());
                             }
                             break;
 
-                        case "sigma": // ALFABETO
+                        case "sigma": // alfabeto
                             for (String s : valor.split(",")) {
                                 auto.agregarAlfabeto(s.trim());
                             }
@@ -68,7 +68,7 @@ public class LectorArchivo {
                     }
                 }
             }
-            System.out.println("¡Archivo cargado con éxito según el formato del PDF!");
+            System.out.println("Archivo cargado" );
 
         } catch (IOException e) {
             System.err.println("Error al leer el archivo: " + e.getMessage());
